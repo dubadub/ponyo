@@ -66,10 +66,22 @@ def move_shark():
     shark_position[0] = shark_position_new[0]
     shark_position[1] = shark_position_new[1]
 
+finished = False
+
+def gen():
+    global finished
+    i = 0
+    while not finished:
+        i += 1
+        yield i
 
 def update_board():
+    global finished
     move_ponyo()
     move_shark()
+
+    if shark_position[0] == ponyo_position[0] and shark_position[1] == ponyo_position[1]:
+        finished = True
 
     return my_board
 
@@ -82,5 +94,5 @@ def update(frame):
     return im,
 
 
-ani = animation.FuncAnimation(fig, update, frames=np.linspace(0, 2*np.pi, 128), blit=True)
+ani = animation.FuncAnimation(fig, update, frames=gen, blit=True, repeat = False)
 plt.show()
