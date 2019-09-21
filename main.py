@@ -20,6 +20,7 @@ boardsize = 50        # board will be X by X where X = boardsize
 # Initialize the board
 ponyo_position = [45, 5]
 shark_position = [5, 45]
+epoch = 0
 my_board = np.zeros((boardsize, boardsize))
 my_board = init_board(ponyo_position, shark_position, my_board)
 
@@ -70,13 +71,15 @@ finished = False
 
 def gen():
     global finished
-    i = 0
+    global epoch
+
     while not finished:
-        i += 1
-        yield i
+        epoch += 1
+        yield epoch
 
 def update_board():
     global finished
+
     move_ponyo()
     move_shark()
 
@@ -90,7 +93,8 @@ def update_board():
 # the updated board animate is the function that FuncAnimation calls
 def update(frame):
     im.set_data(update_board())
-
+    global epoch
+    plt.title(epoch)
     return im,
 
 
