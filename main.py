@@ -31,8 +31,8 @@ fig = plt.gcf()
 im = plt.imshow(my_board)
 
 def move_ponyo():
-    delta_x = random.randint(-2, 2)
-    delta_y = random.randint(-2, 2)
+    delta_x = random.randint(-3, 3)
+    delta_y = random.randint(-3, 3)
 
     if ponyo_position[0] + delta_x < 0 or ponyo_position[0] + delta_x >= boardsize:
         delta_x = 0
