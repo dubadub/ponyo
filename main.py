@@ -7,8 +7,10 @@ import numpy as np
 import random
 
 # Initialize the board with starting positions
-def init_board(ponyo_position, my_board):
+def init_board(ponyo_position, shark_position, my_board):
     my_board[ponyo_position[0], ponyo_position[1]] = 1
+    my_board[shark_position[0], shark_position[1]] = 2
+
     return my_board
 
 
@@ -17,8 +19,9 @@ boardsize = 50        # board will be X by X where X = boardsize
 
 # Initialize the board
 ponyo_position = [45, 5]
+shark_position = [5, 45]
 my_board = np.zeros((boardsize, boardsize))
-my_board = init_board(ponyo_position, my_board)
+my_board = init_board(ponyo_position, shark_position, my_board)
 
 ##### Animate the board #####
 
@@ -27,9 +30,9 @@ fig = plt.gcf()
 # Show first image - which is the initial board
 im = plt.imshow(my_board)
 
-def move_ponyo(ponyo_position, board):
-    delta_x = random.randint(-1, 1)
-    delta_y = random.randint(-1, 1)
+def move_ponyo():
+    delta_x = random.randint(-2, 2)
+    delta_y = random.randint(-2, 2)
 
     if ponyo_position[0] + delta_x < 0 or ponyo_position[0] + delta_x >= boardsize:
         delta_x = 0
@@ -39,23 +42,42 @@ def move_ponyo(ponyo_position, board):
 
     ponyo_position_new = [ponyo_position[0] + delta_x, ponyo_position[1] + delta_y]
 
-    board[ponyo_position_new[0], ponyo_position_new[1]] = 1
-    board[ponyo_position[0], ponyo_position[1]] = 0
+    my_board[ponyo_position_new[0], ponyo_position_new[1]] = 1
+    my_board[ponyo_position[0], ponyo_position[1]] = 0
 
     ponyo_position[0] = ponyo_position_new[0]
     ponyo_position[1] = ponyo_position_new[1]
 
+def move_shark():
+    delta_x = 1 if ponyo_position[0] - shark_position[0] > 0 else -1
+    delta_y = 1 if ponyo_position[1] - shark_position[1] > 0 else -1
 
-def update_board(ponyo_position, board):
-    move_ponyo(ponyo_position, board)
+    if shark_position[0] + delta_x < 0 or shark_position[0] + delta_x >= boardsize:
+        delta_x = 0
 
-    return board
+    if shark_position[1] + delta_y < 0 or shark_position[1] + delta_y >= boardsize:
+        delta_y = 0
+
+    shark_position_new = [shark_position[0] + delta_x, shark_position[1] + delta_y]
+
+    my_board[shark_position_new[0], shark_position_new[1]] = 2
+    my_board[shark_position[0], shark_position[1]] = 0
+
+    shark_position[0] = shark_position_new[0]
+    shark_position[1] = shark_position_new[1]
+
+
+def update_board():
+    move_ponyo()
+    move_shark()
+
+    return my_board
 
 
 # Helper function that updates the board and returns a new image of
 # the updated board animate is the function that FuncAnimation calls
 def update(frame):
-    im.set_data(update_board(ponyo_position, my_board))
+    im.set_data(update_board())
 
     return im,
 
