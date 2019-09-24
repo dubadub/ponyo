@@ -5,24 +5,8 @@ import matplotlib.animation as animation
 
 import numpy as np
 import random
-
-# Initialize the board with starting positions
-def init_board(ponyo_position, shark_position, my_board):
-    my_board[ponyo_position[0], ponyo_position[1]] = 1
-    my_board[shark_position[0], shark_position[1]] = 2
-
-    return my_board
-
-
-# Input variables for the board
-boardsize = 50        # board will be X by X where X = boardsize
-
-# Initialize the board
-ponyo_position = [25, 25]
-shark_position = [5, 45]
-epoch = 0
-my_board = np.zeros((boardsize, boardsize))
-my_board = init_board(ponyo_position, shark_position, my_board)
+import os
+import neat
 
 class Ponyo:
 
@@ -62,6 +46,8 @@ class Game:
         self.ponyo = ponyo
         self.shark = shark
         self.board = board
+        self.board.values[ponyo.x, ponyo.y] = 1
+        self.board.values[shark.x, shark.y] = 2
         self.finished = False
         self.frame = 0
 
@@ -71,17 +57,7 @@ class Game:
             self.frame += 1
             yield self.frame
 
-    def tick(self):
-        self.move_ponyo()
-        self.move_shark()
-
-        if self.shark.x == self.ponyo.x and self.shark.y == self.ponyo.y:
-            self.finished = True
-
-    def move_ponyo(self):
-        delta_x = random.randint(-3, 3)
-        delta_y = random.randint(-3, 3)
-
+    def move_ponyo(self, delta_x, delta_y):
         if self.ponyo.x + delta_x < 0 or self.ponyo.x + delta_x >= self.board.size:
             delta_x = 0
 
@@ -97,8 +73,18 @@ class Game:
         self.ponyo.y = ponyo_position_new[1]
 
     def move_shark(self):
-        delta_x = 1 if self.ponyo.x - self.shark.x > 0 else -1
-        delta_y = 1 if self.ponyo.y - self.shark.y > 0 else -1
+        delta_x = self.ponyo.x - self.shark.x
+        delta_y = self.ponyo.y - self.shark.y
+
+        if delta_x > 0:
+            delta_x = 1
+        if delta_x < 0:
+            delta_x = -1
+
+        if delta_y > 0:
+            delta_y = 1
+        if delta_y < 0:
+            delta_y = -1
 
         if self.shark.x + delta_x < 0 or self.shark.x + delta_x >= self.board.size:
             delta_x = 0
@@ -114,24 +100,198 @@ class Game:
         self.shark.x = shark_position_new[0]
         self.shark.y = shark_position_new[1]
 
+    def ponyo_vision(self):
+        def neighbors(arr, x, y, N):
+            left = max(0, x - N)
+            right = min(arr.shape[0], x + N + 1)
+            top = max(0, y - N)
+            bottom = min(arr.shape[1], y + N + 1)
+
+            window = arr[left:right,top:bottom]
+            fillval = -1
+
+            result = np.empty((2*N+1, 2*N+1))
+            result[:] = fillval
+
+            ll = N - x
+            tt = N - y
+            result[ll+left:ll+right,tt+top:tt+bottom] = window
+
+            return result
+
+
+        return neighbors(self.board.values, self.ponyo.x, self.ponyo.y, 2)
+
+
+    def catched(self):
+        if self.shark.x == self.ponyo.x and self.shark.y == self.ponyo.y:
+            return True
+        else:
+            return False
+
+
 ##### Animate the board #####
 
 # Initialize the plot of the board that will be used for animation
-fig = plt.gcf()
-# Show first image - which is the initial board
-im = plt.imshow(my_board)
+# fig = plt.gcf()
+# im = plt.imshow(Board(50).values)
 
-game = Game(Board(50), Ponyo(25,25), Shark(5, 45))
+# game = Game(Board(50), Ponyo(25,25), Shark(5, 45))
 # Helper function that updates the board and returns a new image of
 # the updated board animate is the function that FuncAnimation calls
-def update(frame):
-    game.tick()
-    im.set_data(game.board.values)
+# def update(frame):
+#     game.tick()
+#     im.set_data(game.board.values)
 
-    plt.title(game.frame)
-    return im,
+#     plt.title(game.frame)
+#     return im,
 
 
-ani = animation.FuncAnimation(fig, update, frames=game.generator, blit=True, repeat = False)
-plt.show()
+# ani = animation.FuncAnimation(fig, update, frames=game.generator, blit=True, repeat = False)
+# plt.show()
 
+gen = 0
+
+def eval_genomes(genomes, config):
+    """
+    runs the simulation of the current population of
+    birds and sets their fitness based on the distance they
+    reach in the game.
+    """
+    global gen
+
+    gen += 1
+
+    # start by creating lists holding the genome itself, the
+    # neural network associated with the genome and the
+    # bird object that uses that network to play
+    nets = []
+    games = []
+    ge = []
+    for genome_id, genome in genomes:
+        genome.fitness = 0  # start with fitness level of 0
+        net = neat.nn.FeedForwardNetwork.create(genome, config)
+        nets.append(net)
+        games.append(Game(Board(50), Ponyo(25,25), Shark(5, 45)))
+        ge.append(genome)
+
+
+    while len(games) > 0:
+
+
+        for x, game in enumerate(games):  # give each bird a fitness of 0.1 for each frame it stays alive
+            ge[x].fitness += 1
+
+            visible = tuple(game.ponyo_vision().reshape(1, -1)[0])
+
+            # send bird location, top pipe location and bottom pipe location and determine from network whether to jump or not
+            output = nets[games.index(game)].activate(visible)
+
+            delta_x = 0
+            delta_y = 0
+
+            if output[0] > 0.2:
+                delta_x = 2
+
+            if output[0] < -0.2:
+                delta_x = -2
+
+            if output[1] > 0.2:
+                delta_y = 2
+
+            if output[1] < -0.2:
+                delta_y = -2
+
+            # print(game.ponyo.x, game.ponyo.y, game.shark.x, game.shark.y, "\n")
+            game.move_ponyo(delta_x, delta_y)
+            game.move_shark()
+
+
+        for x, game in enumerate(games):
+            if game.catched():
+                # print("Eat!", x)
+                nets.pop(x)
+                ge.pop(x)
+                games.pop(x)
+
+
+
+
+def run(config_file):
+    """
+    runs the NEAT algorithm to train a neural network to play flappy bird.
+    :param config_file: location of config file
+    :return: None
+    """
+    config = neat.config.Config(neat.DefaultGenome, neat.DefaultReproduction,
+                                neat.DefaultSpeciesSet, neat.DefaultStagnation,
+                                config_file)
+
+    # Create the population, which is the top-level object for a NEAT run.
+    p = neat.Population(config)
+
+    # Add a stdout reporter to show progress in the terminal.
+    p.add_reporter(neat.StdOutReporter(True))
+    stats = neat.StatisticsReporter()
+    p.add_reporter(stats)
+    #p.add_reporter(neat.Checkpointer(5))
+
+    # Run for up to 50 generations.
+    winner = p.run(eval_genomes, 50)
+
+    winner_net = neat.nn.FeedForwardNetwork.create(winner, config)
+    # Initialize the plot of the board that will be used for animation
+    fig = plt.gcf()
+
+    game = Game(Board(50), Ponyo(25,25), Shark(5, 45))
+
+    im = plt.imshow(game.board.values)
+    # Helper function that updates the board and returns a new image of
+    # the updated board animate is the function that FuncAnimation calls
+    def update(frame):
+
+        visible = tuple(game.ponyo_vision().reshape(1, -1)[0])
+
+        # send bird location, top pipe location and bottom pipe location and determine from network whether to jump or not
+        output = winner_net.activate(visible)
+
+        delta_x = 0
+        delta_y = 0
+
+        if output[0] > 0.2:
+            delta_x = 2
+
+        if output[0] < -0.2:
+            delta_x = -2
+
+        if output[1] > 0.2:
+            delta_y = 2
+
+        if output[1] < -0.2:
+            delta_y = -2
+
+        print(game.board.values)
+        game.move_ponyo(delta_x, delta_y)
+        game.move_shark()
+
+        if game.catched():
+            game.finished = True
+        im.set_data(game.board.values)
+
+        plt.title(game.frame)
+        return im,
+
+    ani = animation.FuncAnimation(fig, update, frames=game.generator, blit=True, repeat = False)
+    plt.show()
+
+    # show final stats
+    print('\nBest genome:\n{!s}'.format(winner))
+
+
+if __name__ == '__main__':
+    # Determine path to configuration file. This path manipulation is
+    # here so that the script will run successfully regardless of the
+    # current working directory.
+    local_dir = os.path.dirname(__file__)
+    config_path = os.path.join(local_dir, 'config-feedforward.txt')
+    run(config_path)
