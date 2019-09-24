@@ -65,20 +65,9 @@ class Game:
         # send bird location, top pipe location and bottom pipe location and determine from network whether to jump or not
         output = self.ponyo.net.activate(visible)
 
-        delta_x = 0
-        delta_y = 0
+        delta_x = int(round(2 * output[0]))
+        delta_y = int(round(2 * output[1]))
 
-        if output[0] > 0.2:
-            delta_x = 1
-
-        if output[0] < -0.2:
-            delta_x = -1
-
-        if output[1] > 0.2:
-            delta_y = 1
-
-        if output[1] < -0.2:
-            delta_y = -1
 
         if self.ponyo.x + delta_x < 0 or self.ponyo.x + delta_x >= self.board.size:
             delta_x = 0
@@ -142,7 +131,7 @@ class Game:
             return result
 
 
-        return neighbors(self.board.values, self.ponyo.x, self.ponyo.y, 2)
+        return neighbors(self.board.values, self.ponyo.x, self.ponyo.y, 4)
 
 
     def catched(self):
@@ -163,7 +152,13 @@ def eval_genomes(genomes, config):
     for genome_id, genome in genomes:
         genome.fitness = 0  # start with fitness level of 0
 
-        games.append(Game(Board(50), Ponyo(25, 25, genome, config), Shark(5, 45)))
+        games.append(Game(Board(50), Ponyo(25, 25, genome, config), Shark(15, 40)))
+        games.append(Game(Board(50), Ponyo(25, 25, genome, config), Shark(40, 15)))
+        games.append(Game(Board(50), Ponyo(25, 25, genome, config), Shark(40, 40)))
+        games.append(Game(Board(50), Ponyo(25, 25, genome, config), Shark(15, 15)))
+        games.append(Game(Board(50), Ponyo(25, 25, genome, config), Shark(15, 25)))
+        games.append(Game(Board(50), Ponyo(25, 25, genome, config), Shark(25, 15)))
+
 
     frame = 0
     while len(games) > 0:
@@ -182,6 +177,7 @@ def eval_genomes(genomes, config):
 
         for x, game in enumerate(games):
             if game.catched():
+                game.ponyo.genome.fitness -= 1
                 games.pop(x)
 
 
@@ -207,14 +203,14 @@ def run(config_file):
     #p.add_reporter(neat.Checkpointer(5))
 
     # Run for up to 50 generations.
-    winner = p.run(eval_genomes, 5)
+    winner = p.run(eval_genomes, 7)
 
     # show final stats
     print('\nBest genome:\n{!s}'.format(winner))
     # Initialize the plot of the board that will be used for animation
     fig = plt.gcf()
 
-    game = Game(Board(50), Ponyo(25,25, winner, config), Shark(5, 45))
+    game = Game(Board(50), Ponyo(25, 25, winner, config), Shark(15, 40))
 
     im = plt.imshow(game.board.values)
     # Helper function that updates the board and returns a new image of
