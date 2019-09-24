@@ -10,7 +10,9 @@ import neat
 
 class Ponyo:
 
-    def __init__(self, x, y):
+    def __init__(self, x, y, genome, config):
+        self.genome = genome
+        self.net = neat.nn.FeedForwardNetwork.create(genome, config)
         self.x = x
         self.y = y
 
@@ -57,7 +59,27 @@ class Game:
             self.frame += 1
             yield self.frame
 
-    def move_ponyo(self, delta_x, delta_y):
+    def move_ponyo(self):
+        visible = tuple(self.ponyo_vision().reshape(1, -1)[0])
+
+        # send bird location, top pipe location and bottom pipe location and determine from network whether to jump or not
+        output = self.ponyo.net.activate(visible)
+
+        delta_x = 0
+        delta_y = 0
+
+        if output[0] > 0.2:
+            delta_x = 1
+
+        if output[0] < -0.2:
+            delta_x = -1
+
+        if output[1] > 0.2:
+            delta_y = 1
+
+        if output[1] < -0.2:
+            delta_y = -1
+
         if self.ponyo.x + delta_x < 0 or self.ponyo.x + delta_x >= self.board.size:
             delta_x = 0
 
@@ -66,8 +88,8 @@ class Game:
 
         ponyo_position_new = [self.ponyo.x + delta_x, self.ponyo.y + delta_y]
 
-        self.board.set(ponyo_position_new[0], ponyo_position_new[1], 1)
         self.board.set(self.ponyo.x, self.ponyo.y, 0)
+        self.board.set(ponyo_position_new[0], ponyo_position_new[1], 1)
 
         self.ponyo.x = ponyo_position_new[0]
         self.ponyo.y = ponyo_position_new[1]
@@ -124,94 +146,42 @@ class Game:
 
 
     def catched(self):
-        if self.shark.x == self.ponyo.x and self.shark.y == self.ponyo.y:
-            return True
-        else:
-            return False
+        return self.shark.x == self.ponyo.x and self.shark.y == self.ponyo.y
 
 
-##### Animate the board #####
-
-# Initialize the plot of the board that will be used for animation
-# fig = plt.gcf()
-# im = plt.imshow(Board(50).values)
-
-# game = Game(Board(50), Ponyo(25,25), Shark(5, 45))
-# Helper function that updates the board and returns a new image of
-# the updated board animate is the function that FuncAnimation calls
-# def update(frame):
-#     game.tick()
-#     im.set_data(game.board.values)
-
-#     plt.title(game.frame)
-#     return im,
-
-
-# ani = animation.FuncAnimation(fig, update, frames=game.generator, blit=True, repeat = False)
-# plt.show()
 
 gen = 0
 
 def eval_genomes(genomes, config):
-    """
-    runs the simulation of the current population of
-    birds and sets their fitness based on the distance they
-    reach in the game.
-    """
+
     global gen
 
     gen += 1
 
-    # start by creating lists holding the genome itself, the
-    # neural network associated with the genome and the
-    # bird object that uses that network to play
-    nets = []
     games = []
-    ge = []
+
     for genome_id, genome in genomes:
         genome.fitness = 0  # start with fitness level of 0
-        net = neat.nn.FeedForwardNetwork.create(genome, config)
-        nets.append(net)
-        games.append(Game(Board(50), Ponyo(25,25), Shark(5, 45)))
-        ge.append(genome)
 
+        games.append(Game(Board(50), Ponyo(25, 25, genome, config), Shark(5, 45)))
 
+    frame = 0
     while len(games) > 0:
 
+        frame += 1
 
-        for x, game in enumerate(games):  # give each bird a fitness of 0.1 for each frame it stays alive
-            ge[x].fitness += 1
+        if frame == 500:
+            break
 
-            visible = tuple(game.ponyo_vision().reshape(1, -1)[0])
+        for x, game in enumerate(games):
+            game.ponyo.genome.fitness += 0.1
 
-            # send bird location, top pipe location and bottom pipe location and determine from network whether to jump or not
-            output = nets[games.index(game)].activate(visible)
-
-            delta_x = 0
-            delta_y = 0
-
-            if output[0] > 0.2:
-                delta_x = 2
-
-            if output[0] < -0.2:
-                delta_x = -2
-
-            if output[1] > 0.2:
-                delta_y = 2
-
-            if output[1] < -0.2:
-                delta_y = -2
-
-            # print(game.ponyo.x, game.ponyo.y, game.shark.x, game.shark.y, "\n")
-            game.move_ponyo(delta_x, delta_y)
+            game.move_ponyo()
             game.move_shark()
 
 
         for x, game in enumerate(games):
             if game.catched():
-                # print("Eat!", x)
-                nets.pop(x)
-                ge.pop(x)
                 games.pop(x)
 
 
@@ -237,41 +207,20 @@ def run(config_file):
     #p.add_reporter(neat.Checkpointer(5))
 
     # Run for up to 50 generations.
-    winner = p.run(eval_genomes, 50)
+    winner = p.run(eval_genomes, 5)
 
-    winner_net = neat.nn.FeedForwardNetwork.create(winner, config)
+    # show final stats
+    print('\nBest genome:\n{!s}'.format(winner))
     # Initialize the plot of the board that will be used for animation
     fig = plt.gcf()
 
-    game = Game(Board(50), Ponyo(25,25), Shark(5, 45))
+    game = Game(Board(50), Ponyo(25,25, winner, config), Shark(5, 45))
 
     im = plt.imshow(game.board.values)
     # Helper function that updates the board and returns a new image of
     # the updated board animate is the function that FuncAnimation calls
     def update(frame):
-
-        visible = tuple(game.ponyo_vision().reshape(1, -1)[0])
-
-        # send bird location, top pipe location and bottom pipe location and determine from network whether to jump or not
-        output = winner_net.activate(visible)
-
-        delta_x = 0
-        delta_y = 0
-
-        if output[0] > 0.2:
-            delta_x = 2
-
-        if output[0] < -0.2:
-            delta_x = -2
-
-        if output[1] > 0.2:
-            delta_y = 2
-
-        if output[1] < -0.2:
-            delta_y = -2
-
-        print(game.board.values)
-        game.move_ponyo(delta_x, delta_y)
+        game.move_ponyo()
         game.move_shark()
 
         if game.catched():
@@ -281,11 +230,10 @@ def run(config_file):
         plt.title(game.frame)
         return im,
 
+
     ani = animation.FuncAnimation(fig, update, frames=game.generator, blit=True, repeat = False)
     plt.show()
 
-    # show final stats
-    print('\nBest genome:\n{!s}'.format(winner))
 
 
 if __name__ == '__main__':
