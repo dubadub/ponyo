@@ -22,6 +22,16 @@ def eval_genomes(genomes, config):
         games.append(Game(Board(50), Ponyo(25, 25, genome, config), Shark(25, 30)))
 
 
+        games.append(Game(Board(50), Ponyo(25, 25, genome, config), Shark(5, 45)))
+        games.append(Game(Board(50), Ponyo(25, 25, genome, config), Shark(45, 5)))
+        games.append(Game(Board(50), Ponyo(25, 25, genome, config), Shark(45, 45)))
+        games.append(Game(Board(50), Ponyo(25, 25, genome, config), Shark(5, 5)))
+        games.append(Game(Board(50), Ponyo(25, 25, genome, config), Shark(5, 5)))
+        games.append(Game(Board(50), Ponyo(25, 25, genome, config), Shark(5, 5)))
+        games.append(Game(Board(50), Ponyo(25, 25, genome, config), Shark(45, 5)))
+        games.append(Game(Board(50), Ponyo(25, 25, genome, config), Shark(5, 45)))
+
+
     frame = 0
     while len(games) > 0:
 
@@ -65,7 +75,7 @@ def run(config_file):
     #p.add_reporter(neat.Checkpointer(5))
 
     # Run for up to 50 generations.
-    winner = p.run(eval_genomes, 5)
+    winner = p.run(eval_genomes, 50)
 
     # show final stats
     print('\nBest genome:\n{!s}'.format(winner))

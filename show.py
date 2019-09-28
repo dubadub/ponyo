@@ -10,7 +10,7 @@ def display(genome, config):
     
     fig = plt.gcf()
 
-    game = Game(Board(50), Ponyo(25, 25, genome, config), Shark(15, 40))
+    game = Game(Board(50), Ponyo(25, 25, genome, config), Shark(15, 15))
 
     im = plt.imshow(game.board.values)
     # Helper function that updates the board and returns a new image of
