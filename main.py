@@ -11,6 +11,9 @@ import neat
 class Ponyo:
 
     def __init__(self, x, y, genome, config):
+        self.vision_size = 4
+        self.max_energy = 3
+        self.energy = 2
         self.genome = genome
         self.net = neat.nn.FeedForwardNetwork.create(genome, config)
         self.x = x
@@ -19,6 +22,16 @@ class Ponyo:
     def move(self, delta_x, delta_y):
         self.x = self.x + delta_x
         self.y = self.y + delta_y
+
+    def increase_energy(self):
+        self.energy += 1
+        if self.energy > self.max_energy:
+            self.energy = self.max_energy
+
+    def decrease_energy(self, delta):
+        self.energy -= delta
+        if self.energy < 0:
+            self.energy = 0
 
 
 class Shark:
@@ -62,11 +75,13 @@ class Game:
     def move_ponyo(self):
         visible = tuple(self.ponyo_vision().reshape(1, -1)[0])
 
-        # send bird location, top pipe location and bottom pipe location and determine from network whether to jump or not
         output = self.ponyo.net.activate(visible)
 
-        delta_x = int(round(2 * output[0]))
-        delta_y = int(round(2 * output[1]))
+        self.ponyo.increase_energy()
+
+        delta_x = int(round(self.ponyo.energy * output[0]))
+        delta_y = int(round(self.ponyo.energy * output[1]))
+
 
 
         if self.ponyo.x + delta_x < 0 or self.ponyo.x + delta_x >= self.board.size:
@@ -74,6 +89,8 @@ class Game:
 
         if self.ponyo.y + delta_y < 0 or self.ponyo.y + delta_y >= self.board.size:
             delta_y = 0
+
+        self.ponyo.decrease_energy(max(abs(delta_x), abs(delta_y)))
 
         ponyo_position_new = [self.ponyo.x + delta_x, self.ponyo.y + delta_y]
 
@@ -131,7 +148,7 @@ class Game:
             return result
 
 
-        return neighbors(self.board.values, self.ponyo.x, self.ponyo.y, 4)
+        return neighbors(self.board.values, self.ponyo.x, self.ponyo.y, self.ponyo.vision_size)
 
 
     def catched(self):
@@ -152,12 +169,14 @@ def eval_genomes(genomes, config):
     for genome_id, genome in genomes:
         genome.fitness = 0  # start with fitness level of 0
 
-        games.append(Game(Board(50), Ponyo(25, 25, genome, config), Shark(15, 40)))
-        games.append(Game(Board(50), Ponyo(25, 25, genome, config), Shark(40, 15)))
-        games.append(Game(Board(50), Ponyo(25, 25, genome, config), Shark(40, 40)))
-        games.append(Game(Board(50), Ponyo(25, 25, genome, config), Shark(15, 15)))
-        games.append(Game(Board(50), Ponyo(25, 25, genome, config), Shark(15, 25)))
-        games.append(Game(Board(50), Ponyo(25, 25, genome, config), Shark(25, 15)))
+        games.append(Game(Board(50), Ponyo(25, 25, genome, config), Shark(20, 30)))
+        games.append(Game(Board(50), Ponyo(25, 25, genome, config), Shark(30, 20)))
+        games.append(Game(Board(50), Ponyo(25, 25, genome, config), Shark(30, 30)))
+        games.append(Game(Board(50), Ponyo(25, 25, genome, config), Shark(20, 20)))
+        games.append(Game(Board(50), Ponyo(25, 25, genome, config), Shark(20, 25)))
+        games.append(Game(Board(50), Ponyo(25, 25, genome, config), Shark(25, 20)))
+        games.append(Game(Board(50), Ponyo(25, 25, genome, config), Shark(30, 25)))
+        games.append(Game(Board(50), Ponyo(25, 25, genome, config), Shark(25, 30)))
 
 
     frame = 0
@@ -203,7 +222,7 @@ def run(config_file):
     #p.add_reporter(neat.Checkpointer(5))
 
     # Run for up to 50 generations.
-    winner = p.run(eval_genomes, 7)
+    winner = p.run(eval_genomes, 50)
 
     # show final stats
     print('\nBest genome:\n{!s}'.format(winner))
@@ -223,7 +242,7 @@ def run(config_file):
             game.finished = True
         im.set_data(game.board.values)
 
-        plt.title(game.frame)
+        plt.title(f'frame: {game.frame} energy: {game.ponyo.energy}')
         return im,
 
 
