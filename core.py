@@ -104,6 +104,8 @@ class Game:
 
 
     def catched(self):
+        # print(self.shark.x, self.ponyo.x, self.shark.y, self.ponyo.y)
+        
         return self.shark.x == self.ponyo.x and self.shark.y == self.ponyo.y
 
 
@@ -123,16 +125,15 @@ class Game:
         top = max(0, y - N)
         bottom = min(self.board_size, y + N + 1)
         
-        window = np.zeros((right - left, bottom - top))
+        window = np.ones((right - left, bottom - top))
         
         if self.ponyo.x >= left and self.ponyo.x < right and self.ponyo.y >= top and self.ponyo.y < bottom:
-            window[self.ponyo.x - left, self.ponyo.y - top] = 1
+            window[self.ponyo.x - left, self.ponyo.y - top] = 2
 
         if self.shark.x >= left and self.shark.x < right and self.shark.y >= top and self.shark.y < bottom:
-            window[self.shark.x - left, self.shark.y - top] = 2
+            window[self.shark.x - left, self.shark.y - top] = 3
 
-        result = np.empty((2*N+1, 2*N+1))
-        result[:] = -1
+        result = np.zeros((2*N+1, 2*N+1))
 
         ll = N - x
         tt = N - y
