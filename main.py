@@ -3,7 +3,7 @@ import os
 import neat
 import pickle
 
-from core import Game, Board, Ponyo, Shark
+from core import Game, Ponyo, Shark
 
 def eval_genomes(genomes, config):    
 
@@ -12,24 +12,24 @@ def eval_genomes(genomes, config):
     for genome_id, genome in genomes:
         genome.fitness = 0  
 
-        games.append(Game(Board(50), Ponyo(25, 25, genome, config), Shark(20, 30)))
-        games.append(Game(Board(50), Ponyo(25, 25, genome, config), Shark(30, 20)))
-        games.append(Game(Board(50), Ponyo(25, 25, genome, config), Shark(30, 30)))
-        games.append(Game(Board(50), Ponyo(25, 25, genome, config), Shark(20, 20)))
-        games.append(Game(Board(50), Ponyo(25, 25, genome, config), Shark(20, 25)))
-        games.append(Game(Board(50), Ponyo(25, 25, genome, config), Shark(25, 20)))
-        games.append(Game(Board(50), Ponyo(25, 25, genome, config), Shark(30, 25)))
-        games.append(Game(Board(50), Ponyo(25, 25, genome, config), Shark(25, 30)))
+        games.append(Game(49, Ponyo(25, 25, genome, config), Shark(20, 30)))
+        games.append(Game(49, Ponyo(25, 25, genome, config), Shark(30, 20)))
+        games.append(Game(49, Ponyo(25, 25, genome, config), Shark(30, 30)))
+        games.append(Game(49, Ponyo(25, 25, genome, config), Shark(20, 20)))
+        games.append(Game(49, Ponyo(25, 25, genome, config), Shark(20, 25)))
+        games.append(Game(49, Ponyo(25, 25, genome, config), Shark(25, 20)))
+        games.append(Game(49, Ponyo(25, 25, genome, config), Shark(30, 25)))
+        games.append(Game(49, Ponyo(25, 25, genome, config), Shark(25, 30)))
 
 
-        games.append(Game(Board(50), Ponyo(25, 25, genome, config), Shark(5, 45)))
-        games.append(Game(Board(50), Ponyo(25, 25, genome, config), Shark(45, 5)))
-        games.append(Game(Board(50), Ponyo(25, 25, genome, config), Shark(45, 45)))
-        games.append(Game(Board(50), Ponyo(25, 25, genome, config), Shark(5, 5)))
-        games.append(Game(Board(50), Ponyo(25, 25, genome, config), Shark(5, 5)))
-        games.append(Game(Board(50), Ponyo(25, 25, genome, config), Shark(5, 5)))
-        games.append(Game(Board(50), Ponyo(25, 25, genome, config), Shark(45, 5)))
-        games.append(Game(Board(50), Ponyo(25, 25, genome, config), Shark(5, 45)))
+        games.append(Game(49, Ponyo(25, 25, genome, config), Shark(5, 45)))
+        games.append(Game(49, Ponyo(25, 25, genome, config), Shark(45, 5)))
+        games.append(Game(49, Ponyo(25, 25, genome, config), Shark(45, 45)))
+        games.append(Game(49, Ponyo(25, 25, genome, config), Shark(5, 5)))
+        games.append(Game(49, Ponyo(25, 25, genome, config), Shark(5, 5)))
+        games.append(Game(49, Ponyo(25, 25, genome, config), Shark(5, 5)))
+        games.append(Game(49, Ponyo(25, 25, genome, config), Shark(45, 5)))
+        games.append(Game(49, Ponyo(25, 25, genome, config), Shark(5, 45)))
 
 
     frame = 0

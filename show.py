@@ -4,15 +4,15 @@ from IPython import display
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 
-from core import Game, Board, Ponyo, Shark
+from core import Game, Ponyo, Shark
 
 def display(genome, config):
     
     fig = plt.gcf()
 
-    game = Game(Board(50), Ponyo(25, 25, genome, config), Shark(15, 15))
+    game = Game(49, Ponyo(25, 25, genome, config), Shark(20, 30))
 
-    im = plt.imshow(game.board.values)
+    im = plt.imshow(game.board())
     # Helper function that updates the board and returns a new image of
     # the updated board animate is the function that FuncAnimation calls
     def update(frame):
@@ -21,7 +21,7 @@ def display(genome, config):
 
         if game.catched():
             game.finished = True
-        im.set_data(game.board.values)
+        im.set_data(game.board())
 
         plt.title(f'frame: {game.frame} energy: {game.ponyo.energy}')
         return im,

@@ -38,24 +38,13 @@ class Shark:
         self.y = self.y + delta_y
 
 
-class Board:
-
-    def __init__(self, size):
-        self.size = size
-        self.values = np.zeros((size, size))
-
-    def set(self, x, y, value):
-        self.values[x,y] = value
-
 
 class Game:
 
-    def __init__(self, board, ponyo, shark):
+    def __init__(self, board_size, ponyo, shark):
         self.ponyo = ponyo
         self.shark = shark
-        self.board = board
-        self.board.values[ponyo.x, ponyo.y] = 1
-        self.board.values[shark.x, shark.y] = 2
+        self.board_size = board_size        
         self.finished = False
         self.frame = 0
 
@@ -75,23 +64,16 @@ class Game:
         delta_x = int(round(self.ponyo.energy * output[0]))
         delta_y = int(round(self.ponyo.energy * output[1]))
 
-
-
-        if self.ponyo.x + delta_x < 0 or self.ponyo.x + delta_x >= self.board.size:
+        if self.ponyo.x + delta_x < 0 or self.ponyo.x + delta_x >= self.board_size:
             delta_x = 0
 
-        if self.ponyo.y + delta_y < 0 or self.ponyo.y + delta_y >= self.board.size:
+        if self.ponyo.y + delta_y < 0 or self.ponyo.y + delta_y >= self.board_size:
             delta_y = 0
 
-        self.ponyo.decrease_energy(max(abs(delta_x), abs(delta_y)))
+        self.ponyo.decrease_energy(max(abs(delta_x), abs(delta_y)))        
 
-        ponyo_position_new = [self.ponyo.x + delta_x, self.ponyo.y + delta_y]
-
-        self.board.set(self.ponyo.x, self.ponyo.y, 0)
-        self.board.set(ponyo_position_new[0], ponyo_position_new[1], 1)
-
-        self.ponyo.x = ponyo_position_new[0]
-        self.ponyo.y = ponyo_position_new[1]
+        self.ponyo.x = self.ponyo.x + delta_x
+        self.ponyo.y = self.ponyo.y + delta_y
 
     def move_shark(self):
         delta_x = self.ponyo.x - self.shark.x
@@ -107,43 +89,55 @@ class Game:
         if delta_y < 0:
             delta_y = -1
 
-        if self.shark.x + delta_x < 0 or self.shark.x + delta_x >= self.board.size:
+        if self.shark.x + delta_x < 0 or self.shark.x + delta_x >= self.board_size:
             delta_x = 0
 
-        if self.shark.y + delta_y < 0 or self.shark.y + delta_y >= self.board.size:
+        if self.shark.y + delta_y < 0 or self.shark.y + delta_y >= self.board_size:
             delta_y = 0
+        
 
-        shark_position_new = [self.shark.x + delta_x, self.shark.y + delta_y]
-
-        self.board.set(shark_position_new[0], shark_position_new[1], 2)
-        self.board.set(self.shark.x, self.shark.y, 0)
-
-        self.shark.x = shark_position_new[0]
-        self.shark.y = shark_position_new[1]
+        self.shark.x = self.shark.x + delta_x
+        self.shark.y = self.shark.y + delta_y
 
     def ponyo_vision(self):
-        def neighbors(arr, x, y, N):
-            left = max(0, x - N)
-            right = min(arr.shape[0], x + N + 1)
-            top = max(0, y - N)
-            bottom = min(arr.shape[1], y + N + 1)
-
-            window = arr[left:right,top:bottom]
-            fillval = -1
-
-            result = np.empty((2*N+1, 2*N+1))
-            result[:] = fillval
-
-            ll = N - x
-            tt = N - y
-            result[ll+left:ll+right,tt+top:tt+bottom] = window
-
-            return result
-
-
-        return neighbors(self.board.values, self.ponyo.x, self.ponyo.y, self.ponyo.vision_size)
+        return self.board(self.ponyo.x, self.ponyo.y, self.ponyo.vision_size)
 
 
     def catched(self):
         return self.shark.x == self.ponyo.x and self.shark.y == self.ponyo.y
+
+
+
+    def board(self, x = None, y = None, N = None):
+        if x == None:
+            x = (self.board_size + 1) // 2 - 1 
+
+        if y == None:
+            y = (self.board_size + 1) // 2 - 1
+
+        if N == None:
+            N = (self.board_size + 1) // 2 - 1
+        
+        left = max(0, x - N)
+        right = min(self.board_size, x + N + 1)
+        top = max(0, y - N)
+        bottom = min(self.board_size, y + N + 1)
+        
+        window = np.zeros((right - left, bottom - top))
+        
+        if self.ponyo.x >= left and self.ponyo.x < right and self.ponyo.y >= top and self.ponyo.y < bottom:
+            window[self.ponyo.x - left, self.ponyo.y - top] = 1
+
+        if self.shark.x >= left and self.shark.x < right and self.shark.y >= top and self.shark.y < bottom:
+            window[self.shark.x - left, self.shark.y - top] = 2
+
+        result = np.empty((2*N+1, 2*N+1))
+        result[:] = -1
+
+        ll = N - x
+        tt = N - y
+
+        result[ll+left:ll+right, tt+top:tt+bottom] = window
+        
+        return result   
 
