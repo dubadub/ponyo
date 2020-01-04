@@ -33,11 +33,13 @@ def eval_genomes(genomes, config):
 
         if frame == 500:
             print("Aborted")
+
+            for x, game in enumerate(games):
+                game.ponyo.genome.fitness += 0.1
+
             break
 
         for x, game in enumerate(games):
-            game.ponyo.genome.fitness += 0.1
-
             game.move_ponyo()
             game.move_shark()
 
@@ -45,6 +47,10 @@ def eval_genomes(genomes, config):
         for x, game in enumerate(games):
             if game.catched():
                 game.ponyo.genome.fitness -= 1
+                games.pop(x)
+
+            if game.escaped():
+                game.ponyo.genome.fitness += 1
                 games.pop(x)
 
 
@@ -70,7 +76,7 @@ def run(config_file):
     #p.add_reporter(neat.Checkpointer(5))
 
     # Run for up to 50 generations.
-    winner = p.run(eval_genomes, 10)
+    winner = p.run(eval_genomes, 35)
 
     # show final stats
     print('\nBest genome:\n{!s}'.format(winner))

@@ -1,5 +1,6 @@
 import pickle
 import time
+from random import randint
 from IPython import display
 import matplotlib
 import matplotlib.pyplot as plt
@@ -14,7 +15,10 @@ cmap, norm = matplotlib.colors.from_levels_and_colors(levels, colors)
 def display(genome, config):
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10,5))
 
-    game = Game(Ponyo(genome, config), Shark(), (-15, 10))
+    x = randint(-7, 7)
+    y = randint(-7, 7)
+
+    game = Game(Ponyo(genome, config), Shark(), (x, y))
 
     im1 = ax1.imshow(game.board(100), cmap=cmap, norm=norm, interpolation='none')
     im2 = ax2.imshow(game.ponyo_vision(), cmap=cmap, norm=norm, interpolation='none')
@@ -24,7 +28,7 @@ def display(genome, config):
         game.move_ponyo()
         game.move_shark()
 
-        print(game.shark_position)
+        # print(game.shark_position)
 
         if game.catched():
             game.finished = True

@@ -41,6 +41,8 @@ class Game:
         delta_x = int(round(2 * output[0]))
         delta_y = int(round(2 * output[1]))
 
+        # print((delta_x, delta_y))
+
         self.shark_position = (self.shark_position[0] - delta_x, self.shark_position[1] - delta_y)
 
     def move_shark(self):
@@ -77,4 +79,7 @@ class Game:
 
     def catched(self):
         return self.shark_position[0] == 0 and self.shark_position[1] == 0
+
+    def escaped(self):
+        return abs(self.shark_position[0]) > self.ponyo.vision_size and abs(self.shark_position[1]) > self.ponyo.vision_size
 
