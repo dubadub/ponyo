@@ -2,34 +2,28 @@ import numpy as np
 import os
 import neat
 import pickle
+from random import randint
 
 from core import Game, Ponyo, Shark
 
-def eval_genomes(genomes, config):    
+def eval_genomes(genomes, config):
 
     games = []
 
+    sharks = []
+
+    for i in range(10):
+        x = randint(-7, 7)
+        y = randint(-7, 7)
+
+        if (x, y) != (0, 0):
+            sharks.append((x, y))
+
     for genome_id, genome in genomes:
-        genome.fitness = 0  
+        genome.fitness = 0
 
-        games.append(Game(49, Ponyo(25, 25, genome, config), Shark(20, 30)))
-        games.append(Game(49, Ponyo(25, 25, genome, config), Shark(30, 20)))
-        games.append(Game(49, Ponyo(25, 25, genome, config), Shark(30, 30)))
-        games.append(Game(49, Ponyo(25, 25, genome, config), Shark(20, 20)))
-        games.append(Game(49, Ponyo(25, 25, genome, config), Shark(20, 25)))
-        games.append(Game(49, Ponyo(25, 25, genome, config), Shark(25, 20)))
-        games.append(Game(49, Ponyo(25, 25, genome, config), Shark(30, 25)))
-        games.append(Game(49, Ponyo(25, 25, genome, config), Shark(25, 30)))
-
-
-        games.append(Game(49, Ponyo(25, 25, genome, config), Shark(5, 45)))
-        games.append(Game(49, Ponyo(25, 25, genome, config), Shark(45, 5)))
-        games.append(Game(49, Ponyo(25, 25, genome, config), Shark(45, 45)))
-        games.append(Game(49, Ponyo(25, 25, genome, config), Shark(5, 5)))
-        games.append(Game(49, Ponyo(25, 25, genome, config), Shark(5, 5)))
-        games.append(Game(49, Ponyo(25, 25, genome, config), Shark(5, 5)))
-        games.append(Game(49, Ponyo(25, 25, genome, config), Shark(45, 5)))
-        games.append(Game(49, Ponyo(25, 25, genome, config), Shark(5, 45)))
+        for shark_position in sharks:
+            games.append(Game(Ponyo(genome, config), Shark(), shark_position))
 
 
     frame = 0
@@ -38,6 +32,7 @@ def eval_genomes(genomes, config):
         frame += 1
 
         if frame == 500:
+            print("Aborted")
             break
 
         for x, game in enumerate(games):
@@ -75,7 +70,7 @@ def run(config_file):
     #p.add_reporter(neat.Checkpointer(5))
 
     # Run for up to 50 generations.
-    winner = p.run(eval_genomes, 25)
+    winner = p.run(eval_genomes, 10)
 
     # show final stats
     print('\nBest genome:\n{!s}'.format(winner))
